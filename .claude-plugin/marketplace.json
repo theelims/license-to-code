@@ -1,0 +1,26 @@
+{
+    "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+    "name": "license-to-code",
+    "version": "0.1.0",
+    "description": "Personal collection of Claude Code plugins.",
+    "owner": {
+        "name": "theelims",
+        "email": "elims@gmx.net"
+    },
+    "plugins": [
+        {
+            "name": "uat-agents",
+            "description": "User Acceptance Testing workflow for web apps via the Chrome extension. A planning skill authors and auto-reviews test plans; a tester skill executes them, logs structured bug reports, and accumulates UX observations across sessions.",
+            "version": "0.1.0",
+            "source": "./plugins/uat-agents",
+            "category": "testing",
+            "keywords": [
+                "uat",
+                "testing",
+                "qa",
+                "chrome",
+                "user-acceptance"
+            ]
+        }
+    ]
+}
