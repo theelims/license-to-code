@@ -10,7 +10,8 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:sderev.com)",
       "Bash(xargs ls *)",
-      "Bash(chmod +x *)"
+      "Bash(chmod +x *)",
+      "Bash(git commit *)"
     ]
   }
 }
