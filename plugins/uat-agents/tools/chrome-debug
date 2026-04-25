@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+# chrome-debug — Start or stop a Windows Chrome instance with remote DevTools enabled.
+#
+# Usage:
+#   ./tools/chrome-debug start   (default if no arg given)
+#   ./tools/chrome-debug stop
+#
+# Requirements:
+#   - WSL2 with networkingMode=mirrored in %USERPROFILE%\.wslconfig
+#   - Google Chrome installed on Windows
+
+set -euo pipefail
+
+DEVTOOLS_PORT=9222
+DEVTOOLS_URL="http://localhost:${DEVTOOLS_PORT}/json/version"
+WAIT_TIMEOUT=15
+
+die() { echo "ERROR: $*" >&2; exit 1; }
+
+repo_name() {
+  local toplevel
+  if toplevel=$(git rev-parse --show-toplevel 2>/dev/null); then
+    basename "$toplevel"
+  else
+    basename "$(pwd)"
+  fi
+}
+
+find_chrome() {
+  local found
+  found=$(cmd.exe /c "where chrome.exe" 2>/dev/null | head -1 | tr -d '\r') || true
+  if [[ -n "$found" ]]; then
+    echo "$found"
+    return
+  fi
+  local candidates=(
+    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
+  )
+  for c in "${candidates[@]}"; do
+    local result
+    result=$(powershell.exe -NoProfile -NonInteractive -Command "Test-Path '${c}'" 2>/dev/null | tr -d '\r') || true
+    if [[ "$result" == "True" ]]; then
+      echo "$c"
+      return
+    fi
+  done
+  die "Chrome not found. Install Google Chrome on Windows or ensure chrome.exe is in PATH."
+}
+
+# Reset Chrome's exit_type in the profile's Local State to prevent "restore session?" prompt.
+reset_exit_type() {
+  local win_data_dir="$1"
+  local wsl_data_dir
+  wsl_data_dir=$(wslpath "$win_data_dir" 2>/dev/null) || return 0
+  local local_state="${wsl_data_dir}/Local State"
+  if [[ -f "$local_state" ]]; then
+    sed -i 's/"exit_type":"Crashed"/"exit_type":"Normal"/g' "$local_state" 2>/dev/null || true
+    sed -i 's/"exit_type":"Abnormal"/"exit_type":"Normal"/g' "$local_state" 2>/dev/null || true
+  fi
+}
+
+cmd_start() {
+  if curl -sf "${DEVTOOLS_URL}" > /dev/null 2>&1; then
+    echo "Chrome DevTools already reachable at ${DEVTOOLS_URL}."
+    exit 0
+  fi
+
+  local name
+  name=$(repo_name)
+
+  local localappdata_win
+  localappdata_win=$(powershell.exe -NoProfile -NonInteractive -Command \
+    '[System.Environment]::GetFolderPath("LocalApplicationData")' 2>/dev/null | tr -d '\r')
+  [[ -n "$localappdata_win" ]] || die "Could not resolve %LOCALAPPDATA% via PowerShell."
+
+  local profile_dir_win="${localappdata_win}\\ChromeDebugProfiles\\${name}"
+
+  reset_exit_type "$profile_dir_win"
+
+  local chrome_exe
+  chrome_exe=$(find_chrome)
+
+  echo "Starting Chrome for '${name}' on port ${DEVTOOLS_PORT}..."
+
+  powershell.exe -NoProfile -NonInteractive -Command "
+    Start-Process -FilePath '${chrome_exe}' -ArgumentList @(
+      '--remote-debugging-port=${DEVTOOLS_PORT}',
+      '--user-data-dir=${profile_dir_win}',
+      '--disable-session-crashed-bubble',
+      '--no-first-run'
+    )
+  " 2>/dev/null
+
+  echo -n "Waiting for DevTools endpoint"
+  local elapsed=0
+  while (( elapsed < WAIT_TIMEOUT )); do
+    if curl -sf "${DEVTOOLS_URL}" > /dev/null 2>&1; then
+      echo ""
+      echo "Chrome DevTools ready at ${DEVTOOLS_URL}"
+      return 0
+    fi
+    echo -n "."
+    sleep 1
+    (( elapsed++ ))
+  done
+  echo ""
+  die "Timed out waiting for Chrome DevTools at ${DEVTOOLS_URL}.
+Ensure networkingMode=mirrored is set in %USERPROFILE%\\.wslconfig and WSL was restarted (wsl --shutdown)."
+}
+
+cmd_stop() {
+  echo "Stopping debug Chrome instance (port ${DEVTOOLS_PORT})..."
+  powershell.exe -NoProfile -NonInteractive -Command "
+    \$procs = Get-WmiObject Win32_Process -Filter \"Name='chrome.exe'\" |
+      Where-Object { \$_.CommandLine -like '*--remote-debugging-port=${DEVTOOLS_PORT}*' }
+    if (\$procs) {
+      \$procs | ForEach-Object { \$_.Terminate() | Out-Null }
+      Write-Host 'Done.'
+    } else {
+      Write-Host 'No matching Chrome process found (may already be stopped).'
+    }
+  " 2>/dev/null || true
+}
+
+case "${1:-}" in
+  start) cmd_start ;;
+  stop)  cmd_stop ;;
+  *)
+    echo "Usage: $(basename "$0") start|stop" >&2
+    echo ""
+    echo "  start  Launch Windows Chrome with remote DevTools on port ${DEVTOOLS_PORT}"
+    echo "  stop   Kill only the debug Chrome instance (preserves regular Chrome)"
+    exit 1
+    ;;
+esac

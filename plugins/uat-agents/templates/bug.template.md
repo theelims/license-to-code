@@ -38,7 +38,7 @@ chrome_url_at_failure: {url}
 ## Environment
 - URL at failure: {url}
 - Initial app state: {as described in plan, or any deviation noticed}
-- Browser: Chrome (via claude-in-chrome extension)
+- Browser: Chrome (via chrome-devtools-mcp)
 
 ## Reproducibility
 - Attempts: {N}

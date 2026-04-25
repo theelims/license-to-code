@@ -8,12 +8,6 @@ A personal collection of Claude Code plugins.
 /plugin marketplace add theelims/license-to-code
 ```
 
-(Or, if cloning locally:)
-
-```
-/plugin marketplace add ./path/to/this/repo
-```
-
 ## Browse plugins
 
 ```
@@ -57,4 +51,4 @@ To add a new plugin: create `plugins/<plugin-name>/` with its own `.claude-plugi
 
 ## License
 
-MIT (see `LICENSE`)
+MIT (see [`LICENSE`](LICENSE))

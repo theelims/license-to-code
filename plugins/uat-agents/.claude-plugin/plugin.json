@@ -1,14 +1,20 @@
 {
-  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
-  "name": "uat-agents",
-  "version": "0.1.0",
-  "description": "User Acceptance Testing workflow for web apps via the Chrome extension. Includes a planning skill with auto-review, a tester skill with resume/abort semantics, and a structured bug-report format that hands off to a debugging agent.",
-  "author": {
-    "name": "REPLACE-WITH-YOUR-NAME",
-    "email": "REPLACE-WITH-YOUR-EMAIL"
-  },
-  "homepage": "https://github.com/REPLACE/REPLACE",
-  "repository": "https://github.com/REPLACE/REPLACE",
-  "license": "MIT",
-  "keywords": ["uat", "testing", "qa", "chrome", "user-acceptance"]
+    "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+    "name": "uat-agents",
+    "version": "0.1.0",
+    "description": "User Acceptance Testing workflow for web apps via Chrome DevTools MCP. Includes a setup skill for WSL2, a planning skill with auto-review, a tester skill with resume/abort semantics, and a structured bug-report format that hands off to a debugging agent.",
+    "author": {
+        "name": "theelims",
+        "email": "elims@gmx.net"
+    },
+    "homepage": "https://github.com/theelims/license-to-code",
+    "repository": "https://github.com/theelims/license-to-code",
+    "license": "MIT",
+    "keywords": [
+        "uat",
+        "testing",
+        "qa",
+        "chrome",
+        "user-acceptance"
+    ]
 }

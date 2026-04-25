@@ -1,6 +1,6 @@
 # uat-agents
 
-User Acceptance Testing workflow for web apps via the Claude in Chrome extension.
+User Acceptance Testing workflow for web apps via Chrome DevTools MCP.
 
 This plugin provides three skills and one subagent that operate against a self-contained `./uat/` folder created in the project where you invoke them.
 
@@ -10,16 +10,19 @@ This plugin provides three skills and one subagent that operate against a self-c
 |---|---|
 | `/uat-agents:plan` | Author a test plan from authoritative docs through Q&A. Auto-runs the reviewer subagent. Produces a `plan.md` requiring manual approval. |
 | `/uat-agents:plan-review` | Re-run the reviewer against an existing plan after hand-edits. Demotes status to `in-review`. |
-| `/uat-agents:test` | Execute an approved plan via the Chrome extension. Logs structured bugs, supports resume/restart/reverify/subset, aborts on critical bugs. |
+| `/uat-agents:setup` | One-time project setup: writes the `chrome-devtools` MCP entry into `.mcp.json`, copies `./tools/chrome-debug`, and walks you through WSL2 prerequisites. |
+| `/uat-agents:test` | Execute an approved plan via Chrome DevTools MCP. Logs structured bugs, supports resume/restart/reverify/subset, aborts on critical bugs. |
 
 Plus the `uat-plan-reviewer` subagent, which is invoked automatically by the two planning skills and never directly by you.
 
 ## Prerequisites
 
 - Claude Code v2.0.73 or higher
-- Claude in Chrome extension v1.0.36 or higher (only the tester needs it; the planner does not)
-- Either start sessions with `claude --chrome` or run `/chrome` once and select "Enabled by default"
-- A direct Anthropic plan (Pro, Max, Team, or Enterprise) — the Chrome extension is not available through third-party providers
+- Node.js ≥20.19 (required to run `chrome-devtools-mcp` via `npx`)
+- WSL2 with `networkingMode=mirrored` in `%USERPROFILE%\.wslconfig` (makes Windows `localhost` reachable from WSL)
+- Google Chrome installed on Windows
+
+Run `/uat-agents:setup` to handle the automated parts. See [Quick start](#quick-start) for the full setup sequence.
 
 ## Installation
 
@@ -38,14 +41,35 @@ The skills will appear as `/uat-agents:plan`, `/uat-agents:plan-review`, and `/u
 
 ## Quick start
 
-```text
-claude --chrome
+### First-time setup (once per machine)
 
+```text
+> /uat-agents:setup
+```
+
+The skill writes `.mcp.json` and copies `./tools/chrome-debug`, then tells you to:
+
+1. Press `Win + R` → type `notepad %USERPROFILE%\.wslconfig` → Enter. Add:
+   ```ini
+   [wsl2]
+   networkingMode=mirrored
+   ```
+   Save and close.
+2. From Windows PowerShell: `wsl --shutdown` — then reopen your WSL terminal.
+3. In Claude Code: `/restart` to load the MCP server.
+
+### Every test session
+
+```bash
+# Start Chrome on Windows with remote DevTools
+./tools/chrome-debug start
+
+# Plan (interactive Q&A → auto-review → you approve)
 > /uat-agents:plan
-# (interactive Q&A, reviewer subagent auto-runs, you approve)
 
 > /clear
 
+# Execute the approved plan
 > /uat-agents:test 2026-04-25-my-feature
 
 # If a critical bug aborts:
@@ -57,6 +81,9 @@ claude --chrome
 > /uat-agents:test 2026-04-25-my-feature           # resume (default)
 # or:
 > /uat-agents:test 2026-04-25-my-feature reverify  # re-run from start
+
+# When done for the day
+./tools/chrome-debug stop
 ```
 
 ## Folder structure created in your project
