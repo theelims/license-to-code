@@ -2,18 +2,17 @@
 
 User Acceptance Testing workflow for web apps via Chrome DevTools MCP.
 
-This plugin provides three skills and one subagent that operate against a self-contained `./uat/` folder created in the project where you invoke them.
+This plugin provides two user-facing skills (plus setup) and one subagent that operate against a self-contained `./uat/` folder created in the project where you invoke them.
 
 ## What you get
 
 | Skill | Purpose |
 |---|---|
-| `/uat-agents:plan` | Author a test plan from authoritative docs through Q&A. Auto-runs the reviewer subagent. Produces a `plan.md` requiring manual approval. |
-| `/uat-agents:plan-review` | Re-run the reviewer against an existing plan after hand-edits. Demotes status to `in-review`. |
+| `/uat-agents:plan` | **New plan:** Author a test plan from authoritative docs through Q&A. **Re-review:** Supply an existing session slug to re-run the reviewer after hand-edits (replaces the former `plan-review`). Auto-runs the reviewer subagent. Produces a `plan.md` manifest requiring manual approval. |
 | `/uat-agents:setup` | One-time project setup: writes the `chrome-devtools` MCP entry into `.mcp.json`, copies `./tools/chrome-debug`, and walks you through WSL2 prerequisites. |
 | `/uat-agents:test` | Execute an approved plan via Chrome DevTools MCP. Logs structured bugs, supports resume/restart/reverify/subset, aborts on critical bugs. |
 
-Plus the `uat-plan-reviewer` subagent, which is invoked automatically by the two planning skills and never directly by you.
+Plus the `uat-plan-reviewer` subagent, invoked automatically by the plan skill and never directly by you.
 
 ## Prerequisites
 
@@ -37,7 +36,7 @@ Run `/uat-agents:setup` to handle the automated parts. See [Quick start](#quick-
 /reload-plugins
 ```
 
-The skills will appear as `/uat-agents:plan`, `/uat-agents:plan-review`, and `/uat-agents:test`.
+The skills will appear as `/uat-agents:plan`, `/uat-agents:test`, and `/uat-agents:setup`.
 
 ## Quick start
 
@@ -65,6 +64,7 @@ The skill writes `.mcp.json` and copies `./tools/chrome-debug`, then tells you t
 ./tools/chrome-debug start
 
 # Plan (interactive Q&A → auto-review → you approve)
+# Or re-review an existing plan: /uat-agents:plan <slug>
 > /uat-agents:plan
 
 > /clear
@@ -93,12 +93,11 @@ The first time you run `/uat-agents:plan` in a project, this gets created at the
 ```
 uat/
 ├── README.md                       # bootstrapped from this plugin
-├── ux-report.md                    # cumulative idea repository
+├── ux-report.md                    # cross-session idea repository
 └── sessions/
     └── 2026-04-25-checkout-flow/
-        ├── plan.md                 # approved test plan with checkboxes
+        ├── plan.md                 # approved test plan + test session state + UX observations (single manifest)
         ├── review.md               # reviewer subagent's findings
-        ├── session.md              # tester's run state (created on first /uat-agents:test)
         └── bugs/
             ├── INDEX.md
             ├── BUG-001.md
@@ -125,7 +124,7 @@ You can override the rubric per session in the plan's `severity_overrides` front
 
 The tester refuses to run any plan whose `status` field is not exactly `approved`. This is intentional: the review phase is the safety net for ordering bugs and unmet preconditions. Skipping approval defeats the design.
 
-If you hand-edit an approved plan, run `/uat-agents:plan-review` — it demotes the plan to `in-review` and forces a fresh review pass.
+If you hand-edit an approved plan, run `/uat-agents:plan <slug>` — it demotes the plan to `in-review` and forces a fresh review pass.
 
 ## Hand-off to a debug agent
 
