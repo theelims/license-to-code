@@ -77,7 +77,6 @@ Ask in **one message**, skip questions the docs already answer:
 - **Initial app state** (fresh load, seeded data, specific route)
 - **Preconditions / setup** (anything before test 1)
 - **Out of scope** (anything intentionally not tested)
-- **Severity overrides** (departures from default: critical=abort, high=log+skip-deps+continue, medium=log+continue, low=log+continue)
 - **Special focus areas**
 - **Anything else the tester needs to know**
 
